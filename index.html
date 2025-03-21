@@ -50,16 +50,25 @@
             border: 3px solid #000080;
             margin: 10px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             background: #ffffcc;
             font-size: 52px;
             border-radius: 10px;
             flex-basis: auto;
+            position: relative;
         }
 
         .bottom-shapes-container .shape-box {
-            width: 110px; /* Kleinere Breite für nur ein Symbol */
+            width: 110px;
+        }
+
+        .special-symbol {
+            position: absolute;
+            bottom: 5px;
+            font-size: 20px;
+            color: red;
         }
 
         .instruction {
@@ -157,7 +166,8 @@
 
         <div class="instruction">
             Klicken Sie bei Übereinstimmung den grünen Button an!<br>
-            Im anderen Fall klicken Sie den roten Button an!
+            Im anderen Fall klicken Sie den roten Button an!<br>
+            Achtung: Wenn das untere Symbol === (drei Balken) ist und === oben vorkommt, ist die Antwort normalerweise Ja (grün). Aber wenn das Sonderzeichen >= unter dem === oben erscheint, ist die Antwort Nein (rot)!
         </div>
 
         <div class="buttons">
@@ -173,7 +183,9 @@
 
     <script>
         // Symbolpool basierend auf dem Bild
-        const symbolPool = ['*', '||', '===', '>=', '+', '[]'];
+        const symbolPool = ['*', '||', '===', '+', '[]'];
+        const specialSymbol = '>='; // Das Sonderzeichen
+        const threeLinesSymbol = '==='; // Symbol mit drei Balken
 
         // Globale Variablen
         let tasks = [];
@@ -213,9 +225,10 @@
                         topShapes.push(sym);
                     }
                 }
-                // Nur 1 Symbol für unten
                 const bottomShape = symbolPool[Math.floor(Math.random() * symbolPool.length)];
-                generatedTasks.push({ topShapes, bottomShapes: [bottomShape] });
+                // Zufällige Position für das Sonderzeichen (0 bis 4)
+                const specialSymbolPosition = Math.floor(Math.random() * 5);
+                generatedTasks.push({ topShapes, bottomShapes: [bottomShape], specialSymbolPosition });
             }
             return generatedTasks;
         }
@@ -228,10 +241,17 @@
             const topRow = document.getElementById('topRow');
             topRow.innerHTML = '';
 
-            task.topShapes.forEach(shape => {
+            task.topShapes.forEach((shape, i) => {
                 const el = document.createElement('div');
                 el.className = 'shape-box';
                 el.textContent = shape;
+                // Sonderzeichen anzeigen, wenn es an dieser Position ist
+                if (i === task.specialSymbolPosition) {
+                    const specialEl = document.createElement('div');
+                    specialEl.className = 'special-symbol';
+                    specialEl.textContent = specialSymbol;
+                    el.appendChild(specialEl);
+                }
                 topRow.appendChild(el);
             });
 
@@ -259,8 +279,26 @@
         function evaluateAnswer(userSaysYes) {
             const endTime = Date.now();
             const task = tasks[currentTaskIndex];
-            // Prüfen, ob das untere Symbol exakt in den oberen Symbolen vorkommt
-            const correct = task.topShapes.includes(task.bottomShapes[0]);
+
+            // Prüfen, ob das untere Symbol in den oberen Symbolen vorkommt
+            let correct = task.topShapes.includes(task.bottomShapes[0]);
+
+            // Sonderregel: Wenn das untere Symbol === ist und === oben vorkommt
+            const bottomIsThreeLines = task.bottomShapes[0] === threeLinesSymbol;
+            const topHasThreeLines = task.topShapes.includes(threeLinesSymbol);
+            const threeLinesIndex = task.topShapes.indexOf(threeLinesSymbol);
+            const specialSymbolUnderThreeLines = threeLinesIndex === task.specialSymbolPosition;
+
+            if (bottomIsThreeLines && topHasThreeLines) {
+                if (specialSymbolUnderThreeLines) {
+                    // Sonderzeichen unter === → Antwort ist falsch
+                    correct = false;
+                } else {
+                    // Kein Sonderzeichen unter === → Antwort ist wahr
+                    correct = true;
+                }
+            }
+
             const userCorrect = (correct && userSaysYes) || (!correct && !userSaysYes);
             const reactionTime = (endTime - startTime) / 1000;
 
