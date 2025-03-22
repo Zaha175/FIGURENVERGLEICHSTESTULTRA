@@ -105,7 +105,7 @@
         }
 
         .red-button {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f00'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f00'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41L10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E");
         }
 
         #result {
@@ -167,7 +167,7 @@
         <div class="instruction">
             Klicken Sie bei Übereinstimmung den grünen Button an!<br>
             Im anderen Fall klicken Sie den roten Button an!<br>
-            Achtung: Wenn das untere Symbol === (drei Balken) ist und === oben vorkommt, ist die Antwort normalerweise Ja (grün). Aber wenn das Sonderzeichen >= unter dem === oben erscheint, ist die Antwort Nein (rot)!
+            Achtung: Wenn das untere Symbol mit einem der oberen Symbole übereinstimmt, ist die Antwort normalerweise Ja (grün). Aber wenn das Sonderzeichen >= unter dem passenden oberen Symbol erscheint, sind die Symbole nicht gleich, und die Antwort ist Nein (rot)!
         </div>
 
         <div class="buttons">
@@ -185,7 +185,6 @@
         // Symbolpool basierend auf dem Bild
         const symbolPool = ['*', '||', '===', '+', '[]'];
         const specialSymbol = '>='; // Das Sonderzeichen
-        const threeLinesSymbol = '==='; // Symbol mit drei Balken
 
         // Globale Variablen
         let tasks = [];
@@ -283,20 +282,14 @@
             // Prüfen, ob das untere Symbol in den oberen Symbolen vorkommt
             let correct = task.topShapes.includes(task.bottomShapes[0]);
 
-            // Sonderregel: Wenn das untere Symbol === ist und === oben vorkommt
-            const bottomIsThreeLines = task.bottomShapes[0] === threeLinesSymbol;
-            const topHasThreeLines = task.topShapes.includes(threeLinesSymbol);
-            const threeLinesIndex = task.topShapes.indexOf(threeLinesSymbol);
-            const specialSymbolUnderThreeLines = threeLinesIndex === task.specialSymbolPosition;
+            // Sonderregel: Wenn das untere Symbol mit einem oberen Symbol übereinstimmt und das Sonderzeichen unter diesem oberen Symbol ist
+            const bottomSymbol = task.bottomShapes[0];
+            const matchingSymbolIndex = task.topShapes.indexOf(bottomSymbol);
+            const specialSymbolUnderMatchingSymbol = matchingSymbolIndex === task.specialSymbolPosition;
 
-            if (bottomIsThreeLines && topHasThreeLines) {
-                if (specialSymbolUnderThreeLines) {
-                    // Sonderzeichen unter === → Antwort ist falsch
-                    correct = false;
-                } else {
-                    // Kein Sonderzeichen unter === → Antwort ist wahr
-                    correct = true;
-                }
+            if (matchingSymbolIndex !== -1 && specialSymbolUnderMatchingSymbol) {
+                // Sonderzeichen unter dem passenden Symbol → Symbole sind nicht gleich
+                correct = false;
             }
 
             const userCorrect = (correct && userSaysYes) || (!correct && !userSaysYes);
